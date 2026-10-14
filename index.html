@@ -1,0 +1,740 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<style>
+:root{color-scheme:light;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+body{margin:0}
+[hidden]{display:none!important}
+img{max-width:100%}
+</style>
+<title>Minimum Coin Change</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:wght@500;700&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+/* Layout concept: one slide at a time on a cool slate ground; coin-shaped amounts, a ledger of table cells, a single shared problem (coins + amount) that every demo reads from. */
+:root{
+  --bg:#EDF1F3; --surface:#F8FAFB; --fg:#14212B; --muted:#52636F; --line:#CBD5DB;
+  --accent:#0B7A85; --accent-ink:#FFFFFF; --accent-soft:#D3ECEE;
+  --coin:#B4690E; --coin-ink:#FFFFFF; --coin-soft:#F6E3C3;
+  --bad:#B42318; --ok:#1A7F4B;
+  --display:"Bricolage Grotesque","Segoe UI",system-ui,sans-serif;
+  --body:"IBM Plex Sans","Segoe UI",system-ui,sans-serif;
+  --mono:"IBM Plex Mono",ui-monospace,Menlo,Consolas,monospace;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --bg:#0E1820; --surface:#15232E; --fg:#E4ECF1; --muted:#93A5B1; --line:#2A3B47;
+    --accent:#4CC9D2; --accent-ink:#06222A; --accent-soft:#0F3A40;
+    --coin:#F0B94D; --coin-ink:#1A1203; --coin-soft:#3A2D12;
+    --bad:#FF8A7A; --ok:#5FD39A; color-scheme:dark;
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#0E1820; --surface:#15232E; --fg:#E4ECF1; --muted:#93A5B1; --line:#2A3B47;
+  --accent:#4CC9D2; --accent-ink:#06222A; --accent-soft:#0F3A40;
+  --coin:#F0B94D; --coin-ink:#1A1203; --coin-soft:#3A2D12;
+  --bad:#FF8A7A; --ok:#5FD39A; color-scheme:dark;
+}
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--fg);font:16px/1.55 var(--body);padding-bottom:92px}
+button,input{font:inherit;color:inherit}
+:focus-visible{outline:3px solid var(--accent);outline-offset:2px}
+code,.mono{font-family:var(--mono)}
+
+.wrap{max-width:1120px;margin:0 auto;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+.top{position:sticky;top:env(safe-area-inset-top,0px);z-index:5;background:var(--bg);border-bottom:1px solid var(--line)}
+.top .wrap{display:flex;align-items:center;justify-content:space-between;gap:12px;padding-block:10px;flex-wrap:wrap}
+.brand{font:500 13px/1.2 var(--mono);letter-spacing:.06em;text-transform:uppercase;color:var(--muted)}
+.chip{border:1px solid var(--line);background:var(--surface);border-radius:999px;padding:6px 14px;font:500 13px/1.3 var(--mono);cursor:pointer}
+.chip:hover{border-color:var(--accent)}
+.chip b{color:var(--coin);font-weight:500}
+
+main{padding-block:28px 24px}
+.slide{animation:in .22s ease-out}
+@keyframes in{from{opacity:.0;transform:translateY(6px)}to{opacity:1;transform:none}}
+@media (prefers-reduced-motion:reduce){.slide{animation:none}}
+.kicker{font:500 13px/1.2 var(--mono);letter-spacing:.08em;text-transform:uppercase;color:var(--accent)}
+h1{font:700 clamp(28px,4.6vw,46px)/1.08 var(--display);letter-spacing:-.01em;margin:10px 0 12px;text-wrap:balance;max-width:22ch}
+h1.wide{max-width:30ch}
+h2{font:700 20px/1.2 var(--display);margin:0 0 8px}
+h3{font:600 14px/1.3 var(--body);letter-spacing:.06em;text-transform:uppercase;color:var(--muted);margin:0 0 10px}
+.lead{font-size:18px;color:var(--muted);max-width:62ch;margin:0 0 24px}
+p{margin:0 0 12px;max-width:68ch}
+.grid2{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.25fr);gap:20px;align-items:start}
+.grid2.even{grid-template-columns:repeat(2,minmax(0,1fr))}
+.stack{display:grid;gap:20px;min-width:0}
+@media (max-width:860px){.grid2,.grid2.even{grid-template-columns:minmax(0,1fr)}}
+.card{background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:18px;min-width:0}
+pre.code{margin:0;background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:14px 16px;font:400 13.5px/1.6 var(--mono);overflow-x:auto}
+.formula{font:500 17px/1.7 var(--mono);background:var(--accent-soft);border-radius:8px;padding:12px 16px;overflow-x:auto}
+.muted{color:var(--muted)}
+.note{font-size:14px;color:var(--muted)}
+.ok{color:var(--ok)} .bad{color:var(--bad)}
+.tag{display:inline-block;font:500 12px/1 var(--mono);padding:4px 8px;border-radius:999px;background:var(--accent-soft);color:var(--fg)}
+.tag.coin{background:var(--coin-soft)}
+
+.btn{border:1px solid var(--line);background:var(--surface);border-radius:8px;padding:8px 14px;cursor:pointer;font-weight:500}
+.btn:hover:not(:disabled){border-color:var(--accent)}
+.btn:disabled{opacity:.45;cursor:default}
+.btn.primary{background:var(--accent);border-color:var(--accent);color:var(--accent-ink)}
+.row{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
+input[type=text],input[type=number]{background:var(--bg);border:1px solid var(--line);border-radius:8px;padding:9px 12px;font-family:var(--mono);min-width:0;width:100%}
+input[type=range]{width:100%;accent-color:var(--accent)}
+label.f{display:grid;gap:6px;font-size:14px;color:var(--muted);min-width:0}
+
+/* agenda */
+.hero{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.15fr);gap:36px;align-items:center}
+@media (max-width:860px){.hero{grid-template-columns:minmax(0,1fr)}}
+.coin{width:112px;height:112px;border-radius:50%;border:3px solid var(--coin);display:grid;place-items:center;font:700 56px/1 var(--display);color:var(--coin);position:relative;margin-bottom:8px}
+.coin::after{content:"";position:absolute;inset:8px;border-radius:50%;border:1.5px dashed var(--coin);opacity:.55}
+.agenda{list-style:none;margin:0;padding:0;display:grid;gap:8px}
+.agenda button{width:100%;display:flex;gap:14px;align-items:center;text-align:left;background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:12px 14px;cursor:pointer}
+.agenda button:hover{border-color:var(--accent)}
+.agenda .no{flex:none;width:28px;height:28px;border-radius:50%;display:grid;place-items:center;font:500 13px/1 var(--mono);background:var(--accent);color:var(--accent-ink)}
+
+/* tree */
+.treebox{overflow-x:auto;border:1px solid var(--line);border-radius:8px;background:var(--bg)}
+.treebox svg{display:block}
+.tn{cursor:pointer}
+.tn circle{fill:var(--surface);stroke:var(--line);stroke-width:1.5}
+.tn text{fill:var(--fg);font:500 12px var(--mono);text-anchor:middle}
+.tn.dup circle{stroke:var(--coin);stroke-width:2}
+.tn.root circle{stroke:var(--accent);stroke-width:2.5}
+.tn.hl circle{fill:var(--coin);stroke:var(--coin)}
+.tn.hl text{fill:var(--coin-ink)}
+.edge{stroke:var(--line);stroke-width:1.4;fill:none}
+.elab{fill:var(--muted);font:400 9.5px var(--mono);text-anchor:middle}
+.legend{display:flex;gap:16px;flex-wrap:wrap;font-size:13px;color:var(--muted);margin-top:10px}
+.sw{display:inline-block;width:11px;height:11px;border-radius:50%;margin-right:6px;vertical-align:-1px;border:2px solid var(--line);background:var(--surface)}
+.sw.c{border-color:var(--coin)}
+.sw.f{background:var(--coin);border-color:var(--coin)}
+
+/* bars */
+.bars{display:grid;gap:12px}
+.bar{display:grid;gap:4px}
+.bar .lab{display:flex;justify-content:space-between;gap:10px;font-size:14px}
+.bar .lab b{font-family:var(--mono);font-weight:500}
+.track{height:12px;border-radius:6px;background:var(--bg);border:1px solid var(--line);overflow:hidden}
+.fill{height:100%;background:var(--coin);border-radius:6px}
+.fill.a{background:var(--accent)}
+
+/* column chart */
+.cols{display:flex;align-items:flex-end;gap:4px;height:170px;padding-top:18px}
+.col{flex:1 1 0;min-width:0;display:flex;flex-direction:column;justify-content:flex-end;align-items:center;height:100%;gap:3px}
+.col .v{font:400 10px/1 var(--mono);color:var(--muted)}
+.col .b{width:100%;border-radius:3px 3px 0 0;background:var(--accent)}
+.col.rep .b{background:var(--coin)}
+.col .x{font:400 11px/1 var(--mono);color:var(--muted);margin-top:4px}
+
+/* table cells */
+.cells{display:flex;flex-wrap:wrap;gap:6px}
+.cell{width:52px;border:1px solid var(--line);border-radius:8px;background:var(--surface);display:grid;justify-items:center;padding:4px 0 6px;gap:1px}
+.cell .ix{font:400 11px/1.2 var(--mono);color:var(--muted)}
+.cell .v{font:500 18px/1.2 var(--mono)}
+.cell .cn{font:400 10.5px/1.2 var(--mono);color:var(--muted);min-height:13px}
+.cell.pend .v{color:var(--muted);opacity:.5}
+.cell.cur{border-color:var(--accent);background:var(--accent-soft);box-shadow:0 0 0 2px var(--accent)}
+.cell.src{border-color:var(--coin);background:var(--coin-soft)}
+.cell.inf .v{color:var(--bad)}
+.cell.hit{border-color:var(--ok)}
+.cell.path{background:var(--accent);border-color:var(--accent)}
+.cell.path .ix,.cell.path .v,.cell.path .cn{color:var(--accent-ink)}
+
+.cands{list-style:none;margin:0;padding:0;display:grid;gap:6px}
+.cands li{font:400 14px/1.4 var(--mono);padding:8px 10px;border-radius:8px;border:1px solid var(--line);background:var(--bg);overflow-wrap:anywhere}
+.cands li.best{border-color:var(--accent);background:var(--accent-soft)}
+.frames{display:flex;flex-direction:column-reverse;gap:4px;min-height:40px}
+.frame{font:500 14px/1 var(--mono);padding:8px 10px;border-radius:6px;border:1px solid var(--line);background:var(--bg)}
+.frame:last-child{border-color:var(--accent);background:var(--accent-soft)}
+.log{list-style:none;margin:0;padding:0;display:grid;gap:4px;font:400 13px/1.45 var(--mono)}
+.log li{padding:6px 8px;border-radius:6px;border:1px solid transparent;overflow-wrap:anywhere}
+.log li.now{border-color:var(--accent);background:var(--accent-soft)}
+.log li.hit{color:var(--ok)}
+.chips{display:flex;gap:8px;flex-wrap:wrap}
+.chipc{width:40px;height:40px;border-radius:50%;border:2px solid var(--coin);display:grid;place-items:center;font:500 15px/1 var(--mono);color:var(--coin);background:var(--surface)}
+.statline{display:flex;gap:18px;flex-wrap:wrap;font:400 14px/1.4 var(--mono);color:var(--muted)}
+.statline b{color:var(--fg);font-weight:500}
+
+table.cmp{width:100%;border-collapse:collapse;font-size:14.5px;min-width:560px}
+.tw{overflow-x:auto}
+.cmp th,.cmp td{text-align:left;padding:10px 12px;border-bottom:1px solid var(--line);vertical-align:top}
+.cmp th{font:600 12px/1.2 var(--body);letter-spacing:.06em;text-transform:uppercase;color:var(--muted)}
+.cmp td:first-child{font-weight:600}
+.cmp code{font-size:13px}
+
+/* nav */
+.nav{position:fixed;left:0;right:0;bottom:0;z-index:6;background:var(--surface);border-top:1px solid var(--line);padding-bottom:env(safe-area-inset-bottom,0px)}
+.nav .wrap{display:flex;align-items:center;justify-content:space-between;gap:12px;padding-block:12px}
+.dots{display:flex;gap:7px;align-items:center}
+.dot{width:12px;height:12px;border-radius:50%;border:2px solid var(--line);background:transparent;padding:0;cursor:pointer}
+.dot.on{background:var(--accent);border-color:var(--accent)}
+.dot.seen{border-color:var(--accent)}
+.count{font:500 13px/1 var(--mono);color:var(--muted);min-width:44px;text-align:center}
+@media (max-width:520px){.dots{display:none}}
+.prog{position:absolute;left:0;top:-3px;height:3px;background:var(--accent);transition:width .25s}
+</style>
+</head>
+<body>
+<header class="top"><div class="wrap">
+  <span class="brand">Chapter 8 · Dynamic Programming</span>
+  <button class="chip" id="problemChip" data-action="goto" data-i="3" title="Edit the problem"></button>
+</div></header>
+<main class="wrap"><div id="slide"></div></main>
+<nav class="nav" aria-label="Slides">
+  <div class="prog" id="prog"></div>
+  <div class="wrap">
+    <button class="btn" id="prev">← Back</button>
+    <div class="dots" id="dots"></div>
+    <span class="count" id="count"></span>
+    <button class="btn primary" id="next">Next →</button>
+  </div>
+</nav>
+
+<script>
+(function(){
+"use strict";
+var INF=Infinity;
+var TOPICS=[
+ "Naive Recursion and Repeated Subproblems",
+ "Dynamic Programming, Overlapping Subproblems, and Optimal Substructure",
+ "Minimum Coin Change Problem",
+ "DP State, Recurrence, and Base Cases",
+ "Memoization — Top-Down Dynamic Programming",
+ "Tabulation — Bottom-Up Dynamic Programming",
+ "Solution Reconstruction and Unreachable Amounts",
+ "Time and Space Complexity; Greedy versus DP"
+];
+var S={coins:[1,3,4],amount:6,slide:0,treeA:6,memoI:0,tabK:0,evalA:6,walkJ:0,optC:null,hl:null,timer:null,seen:{0:1}};
+
+/* ---------- core algorithms ---------- */
+function solve(coins,A){
+  var dp=new Array(A+1).fill(INF),par=new Array(A+1).fill(0);dp[0]=0;
+  for(var a=1;a<=A;a++){for(var i=0;i<coins.length;i++){var c=coins[i];if(c<=a&&dp[a-c]+1<dp[a]){dp[a]=dp[a-c]+1;par[a]=c;}}}
+  return {dp:dp,par:par};
+}
+function rebuild(par,dp,a){var out=[];if(dp[a]===INF)return null;while(a>0){out.push(par[a]);a-=par[a];}return out;}
+function naiveCalls(coins,A){
+  var n=new Array(A+1).fill(0);n[0]=1;
+  for(var a=1;a<=A;a++){var s=1;for(var i=0;i<coins.length;i++){if(coins[i]<=a)s+=n[a-coins[i]];}n[a]=s;}
+  return n[A];
+}
+function reachCounts(coins,A){
+  var t=new Array(A+1).fill(0);t[A]=1;
+  for(var a=A;a>=1;a--){for(var i=0;i<coins.length;i++){if(coins[i]<=a)t[a-coins[i]]+=t[a];}}
+  return t;
+}
+function memoTrace(coins,A){
+  var ev=[],cache={0:0};
+  function f(a,d){
+    ev.push({t:"call",a:a,d:d});
+    var best=INF,bc=0;
+    for(var i=0;i<coins.length;i++){
+      var c=coins[i];if(c>a)continue;
+      var r;
+      if(Object.prototype.hasOwnProperty.call(cache,a-c)){r=cache[a-c];ev.push({t:"hit",a:a-c,from:a,c:c,v:r,d:d+1});}
+      else{r=f(a-c,d+1);}
+      if(r+1<best){best=r+1;bc=c;}
+    }
+    cache[a]=best;ev.push({t:"store",a:a,v:best,c:bc,d:d});
+    return best;
+  }
+  f(A,0);return ev;
+}
+function replay(ev,i){
+  var cache={0:{v:0,c:0}},stack=[],cur=null;
+  for(var k=0;k<i;k++){
+    var e=ev[k];cur=e;
+    if(e.t==="call")stack.push(e.a);
+    else if(e.t==="store"){cache[e.a]={v:e.v,c:e.c};stack.pop();}
+  }
+  return {cache:cache,stack:stack,cur:cur};
+}
+function greedy(coins,a){
+  var cs=coins.slice().sort(function(x,y){return y-x;}),out=[];
+  for(var i=0;i<cs.length;i++){while(a>=cs[i]){out.push(cs[i]);a-=cs[i];}}
+  return {coins:out,ok:a===0};
+}
+function tabOps(coins,A){var n=0;for(var a=1;a<=A;a++)for(var i=0;i<coins.length;i++)if(coins[i]<=a)n++;return n;}
+
+/* ---------- formatting ---------- */
+function fmt(n){return n===INF?"∞":String(n);}
+function big(n){
+  if(n===INF)return "∞";
+  if(n<1e9)return n.toLocaleString("en-US");
+  return n.toExponential(2).replace("e+"," × 10^");
+}
+function compact(n){
+  if(n<1000)return String(n);
+  try{return new Intl.NumberFormat("en",{notation:"compact",maximumFractionDigits:1}).format(n);}catch(e){return n.toExponential(0);}
+}
+function coinsText(){return "{"+S.coins.join(", ")+"}";}
+function sumText(list){return list.join(" + ");}
+function el(id){return document.getElementById(id);}
+
+/* ---------- problem state ---------- */
+function resetUi(){
+  stopTimer();
+  S.memoI=0;S.tabK=0;S.walkJ=0;S.evalA=S.amount;S.optC=null;S.hl=null;
+  S.treeA=Math.min(S.amount,7);
+  if(S.treeA<2)S.treeA=2;
+  updateChip();
+}
+function setProblem(coins,A){S.coins=coins;S.amount=A;resetUi();}
+function updateChip(){el("problemChip").innerHTML="coins <b>"+coinsText()+"</b> · amount <b>"+S.amount+"</b>";}
+function parseCoins(s){
+  var parts=s.split(/[\s,]+/).filter(Boolean);
+  if(!parts.length)return {err:"Enter at least one coin value."};
+  var nums=parts.map(Number);
+  for(var i=0;i<nums.length;i++){if(!Number.isInteger(nums[i])||nums[i]<1||nums[i]>100)return {err:"Coins must be whole numbers from 1 to 100."};}
+  var u=Array.from(new Set(nums)).sort(function(a,b){return a-b;});
+  if(u.length>8)return {err:"Use at most 8 different coins."};
+  return {coins:u};
+}
+
+/* ---------- shared fragments ---------- */
+function candHtml(a,dp,coins){
+  if(a===0)return "<p>Base case. Zero coins make amount 0, so <code>dp[0] = 0</code>.</p>";
+  var rows=coins.filter(function(c){return c<=a;});
+  if(!rows.length)return "<p>No coin fits inside "+a+", so <code>dp["+a+"] = ∞</code>.</p>";
+  var h="<ul class='cands'>";
+  rows.forEach(function(c){
+    var p=dp[a-c],v=p+1;
+    h+="<li class='"+(v===dp[a]&&dp[a]!==INF?"best":"")+"'>coin "+c+" → dp["+a+"−"+c+"] + 1 = "+fmt(p)+" + 1 = "+fmt(v)+"</li>";
+  });
+  h+="</ul><p class='note' style='margin-top:10px'>dp["+a+"] = "+fmt(dp[a])+(dp[a]===INF?" (every option leads to an unreachable amount)":" (the smallest candidate)")+"</p>";
+  return h;
+}
+function cellsHtml(dp,par,opts){
+  opts=opts||{};var h="<div class='cells'>";
+  for(var a=0;a<dp.length;a++){
+    var cls="cell";
+    if(opts.upto!==undefined&&a>opts.upto)cls+=" pend";
+    if(opts.cur===a)cls+=" cur";
+    if(opts.src&&opts.src.indexOf(a)>=0)cls+=" src";
+    if(opts.path&&opts.path.indexOf(a)>=0)cls+=" path";
+    if(dp[a]===INF&&!(opts.upto!==undefined&&a>opts.upto))cls+=" inf";
+    var shown=(opts.upto!==undefined&&a>opts.upto)?"·":fmt(dp[a]);
+    var cn=(opts.showCoin&&par&&a>0&&dp[a]!==INF&&!(opts.upto!==undefined&&a>opts.upto))?"+"+par[a]:"";
+    h+="<div class='"+cls+"'><span class='ix'>"+a+"</span><span class='v'>"+shown+"</span><span class='cn'>"+cn+"</span></div>";
+  }
+  return h+"</div>";
+}
+
+/* ---------- tree ---------- */
+function buildTree(coins,A,cap){
+  var count=0,trunc=false;
+  function node(a,c){
+    if(count>=cap){trunc=true;return null;}
+    count++;var n={a:a,c:c,kids:[]};
+    if(a>0)for(var i=0;i<coins.length;i++){if(coins[i]<=a){var k=node(a-coins[i],coins[i]);if(k)n.kids.push(k);}}
+    return n;
+  }
+  var root=node(A,0);return {root:root,count:count,trunc:trunc};
+}
+function treeSvg(t){
+  var leaf=0,maxD=0,nodes=[],edges=[];
+  (function go(n,d,p){
+    n.d=d;maxD=Math.max(maxD,d);nodes.push(n);
+    if(!n.kids.length){n.x=leaf++;}
+    else{n.kids.forEach(function(k){go(k,d+1,n);});n.x=(n.kids[0].x+n.kids[n.kids.length-1].x)/2;}
+    if(p)edges.push([p,n]);
+  })(t.root,0,null);
+  var dx=36,dy=58,pad=26,W=Math.max(240,(leaf-1)*dx+pad*2),H=maxD*dy+pad*2;
+  var counts={};nodes.forEach(function(n){counts[n.a]=(counts[n.a]||0)+1;});
+  var svg="<svg id='treeSvg' width='"+W+"' height='"+H+"' viewBox='0 0 "+W+" "+H+"' role='img' aria-label='Recursion tree'>";
+  edges.forEach(function(e){
+    var x1=pad+e[0].x*dx,y1=pad+e[0].d*dy,x2=pad+e[1].x*dx,y2=pad+e[1].d*dy;
+    svg+="<line class='edge' x1='"+x1+"' y1='"+(y1+14)+"' x2='"+x2+"' y2='"+(y2-14)+"'/>";
+    svg+="<text class='elab' x='"+((x1+x2)/2+(x2>=x1?7:-7))+"' y='"+((y1+y2)/2+3)+"'>−"+e[1].c+"</text>";
+  });
+  nodes.forEach(function(n){
+    var cls="tn"+(counts[n.a]>1?" dup":"")+(n===t.root?" root":"");
+    svg+="<g class='"+cls+"' data-a='"+n.a+"' transform='translate("+(pad+n.x*dx)+","+(pad+n.d*dy)+")'><circle r='14'/><text dy='.35em'>"+n.a+"</text></g>";
+  });
+  svg+="</svg>";
+  var distinct=Object.keys(counts).length;
+  return {svg:svg,counts:counts,nodes:nodes.length,distinct:distinct};
+}
+function applyHl(){
+  var svg=el("treeSvg");if(!svg)return;
+  var a=S.hlHover!==null&&S.hlHover!==undefined?S.hlHover:S.hl;
+  Array.prototype.forEach.call(svg.querySelectorAll(".tn"),function(g){
+    g.classList.toggle("hl",a!==null&&a!==undefined&&Number(g.getAttribute("data-a"))===a);
+  });
+  var note=el("treeNote");
+  if(note){
+    var c=S._treeCounts||{};
+    if(a!==null&&a!==undefined&&c[a])note.innerHTML="<b class='mono'>f("+a+")</b> shows up <b>"+c[a]+"</b> time"+(c[a]===1?"":"s")+" in this tree."+(c[a]>1?" Each copy repeats the same work.":"");
+    else note.textContent="Hover or tap a circle to light up every copy of that subproblem.";
+  }
+}
+
+/* ---------- slides ---------- */
+var SLIDES=[],LIVE={};
+
+SLIDES[0]=function(){
+  return "<article class='slide hero'><div>"+
+    "<div class='coin' aria-hidden='true'>8</div>"+
+    "<div class='kicker'>Chapter 8</div>"+
+    "<h1 class='wide'>Dynamic Programming and Minimum Coin Change</h1>"+
+    "<p class='lead'>Begin with a recursion that repeats itself, find the structure that lets you stop repeating, then build the table that solves it. Every demo here runs on one problem you can change.</p>"+
+    "<button class='btn primary' data-action='goto' data-i='1'>Start with slide 1 →</button></div>"+
+    "<ol class='agenda'>"+TOPICS.map(function(t,i){return "<li><button data-action='goto' data-i='"+(i+1)+"'><span class='no'>"+(i+1)+"</span><span>"+t+"</span></button></li>";}).join("")+"</ol></article>";
+};
+
+/* 1 naive recursion */
+SLIDES[1]=function(){
+  return "<article class='slide'><div class='kicker'>Topic 1 of 8</div><h1>"+TOPICS[0]+"</h1>"+
+   "<p class='lead'>To make amount <i>a</i>, try every coin as the last one and solve what is left. It is correct, but it asks the same questions again and again.</p>"+
+   "<div class='grid2'><div class='stack'>"+
+   "<pre class='code'>def min_coins(a):\n    if a == 0: return 0\n    best = INF\n    for c in coins:\n        if c &lt;= a:\n            best = min(best, 1 + min_coins(a - c))\n    return best</pre>"+
+   "<div class='card'><h3>Work done for amount "+"<span id='bigA'>"+S.amount+"</span></h3><div id='live'></div></div>"+
+   "</div><div class='card'><h3>Recursion tree</h3>"+
+   "<label class='f'>Amount drawn in the tree: <b class='mono' id='treeAv'>"+S.treeA+"</b><input type='range' id='treeA' min='2' max='9' value='"+S.treeA+"" +"'></label>"+
+   "<div id='treeLive' style='margin-top:12px'></div></div></div></article>";
+};
+LIVE[1]=function(){
+  var A=S.amount,calls=naiveCalls(S.coins,A),states=A+1;
+  var ev=memoTrace(S.coins,A),solved=ev.filter(function(e){return e.t==="store";}).length+1;
+  var lg=function(x){return Math.log10(Math.max(x,1));};
+  var m=Math.max(lg(calls),1);
+  el("live").innerHTML="<div class='bars'>"+
+    "<div class='bar'><div class='lab'><span>Naive calls</span><b>"+big(calls)+"</b></div><div class='track'><div class='fill' style='width:"+Math.max(2,lg(calls)/m*100)+"%'></div></div></div>"+
+    "<div class='bar'><div class='lab'><span>Different subproblems</span><b>"+big(solved)+"</b></div><div class='track'><div class='fill a' style='width:"+Math.max(2,lg(solved)/m*100)+"%'></div></div></div></div>"+
+    "<p class='note' style='margin:12px 0 0'>Bars use a log scale. Only "+big(solved)+" distinct amounts (0 to "+A+") exist, yet the naive version makes "+big(calls)+" calls.</p>";
+  var t=buildTree(S.coins,S.treeA,160),r=treeSvg(t);
+  S._treeCounts=r.counts;
+  el("treeLive").innerHTML="<div class='treebox'>"+r.svg+"</div>"+
+   "<p class='note' id='treeNote' style='margin:10px 0 0'></p>"+
+   "<div class='legend'><span><i class='sw'></i>computed once</span><span><i class='sw c'></i>appears again elsewhere</span><span><i class='sw f'></i>selected amount</span></div>"+
+   "<p class='note' style='margin:10px 0 0'>"+r.nodes+" calls drawn for amount "+S.treeA+", but only "+r.distinct+" different amounts."+(t.trunc?" The tree is cut at 160 calls.":"")+"</p>";
+  applyHl();
+};
+
+/* 2 DP idea */
+SLIDES[2]=function(){
+  return "<article class='slide'><div class='kicker'>Topic 2 of 8</div><h1>"+TOPICS[1]+"</h1>"+
+   "<p class='lead'>Dynamic programming applies when two properties hold. Both can be seen in the coin problem.</p>"+
+   "<div class='grid2 even'><div class='card'><h2>Overlapping subproblems</h2>"+
+   "<p>Different branches of the recursion ask for the same smaller amount. Solve each amount once, store it, and reuse it.</p>"+
+   "<h3>Times each amount is computed (naive)</h3><div id='live'></div></div>"+
+   "<div class='card'><h2>Optimal substructure</h2>"+
+   "<p>An optimal answer for <i>a</i> contains an optimal answer for what remains after removing one coin. If it did not, swapping in a better remainder would improve the whole.</p>"+
+   "<h3>Pick the last coin</h3><div id='live2'></div></div></div></article>";
+};
+LIVE[2]=function(){
+  var A=S.amount,t=reachCounts(S.coins,A),upto=Math.min(A,24),mx=0,i;
+  for(i=0;i<=upto;i++)mx=Math.max(mx,t[i]);
+  var h="<div class='cols' role='img' aria-label='Computation count per amount'>";
+  for(i=0;i<=upto;i++){
+    var ht=Math.max(4,Math.log10(1+t[i])/Math.log10(1+mx)*100);
+    h+="<div class='col"+(t[i]>1?" rep":"")+"'><span class='v'>"+compact(t[i])+"</span><div class='b' style='height:"+ht+"%'></div><span class='x'>"+i+"</span></div>";
+  }
+  h+="</div><div class='legend'><span><i class='sw f' style='background:var(--accent);border-color:var(--accent)'></i>computed once</span><span><i class='sw f'></i>recomputed</span></div>"+
+   "<p class='note' style='margin:10px 0 0'>Solving amount "+A+(upto<A?" (amounts 0 to 24 shown)":"")+". Column height is log scale.</p>";
+  el("live").innerHTML=h;
+  /* substructure */
+  var r=solve(S.coins,A),fit=S.coins.filter(function(c){return c<=A;});
+  if(!fit.length){el("live2").innerHTML="<p>No coin fits inside "+A+".</p>";return;}
+  if(S.optC===null||fit.indexOf(S.optC)<0)S.optC=(r.par[A]||fit[0]);
+  var c=S.optC,rest=A-c,sub=rebuild(r.par,r.dp,rest),total=r.dp[rest]+1;
+  var btns="<div class='row' style='margin-bottom:12px'>"+fit.map(function(k){return "<button class='btn"+(k===c?" primary":"")+"' data-action='opt' data-c='"+k+"'>last coin "+k+"</button>";}).join("")+"</div>";
+  var body;
+  if(r.dp[rest]===INF){body="<p>Remaining amount "+rest+" cannot be made. This choice leads nowhere.</p>";}
+  else{
+    body="<p>Take one coin of <b class='mono'>"+c+"</b>. The remainder is "+rest+", whose best answer is <b class='mono'>dp["+rest+"] = "+r.dp[rest]+"</b>"+(sub&&sub.length?" ("+sumText(sub)+")":"")+".</p>"+
+    "<p class='mono' style='font-size:15px'>1 + "+r.dp[rest]+" = <b>"+total+"</b> coins</p>"+
+    "<p>"+(total===r.dp[A]?"<span class='ok'><b>Optimal.</b></span> It matches dp["+A+"] = "+r.dp[A]+".":"<span class='bad'><b>Not optimal.</b></span> The best answer for "+A+" is "+fmt(r.dp[A])+" coins.")+"</p>";
+  }
+  el("live2").innerHTML=btns+body;
+};
+
+/* 3 problem */
+SLIDES[3]=function(){
+  var presets=[["Greedy trap",[1,3,4],6],["Classic",[1,2,5],11],["US coins",[1,5,10,25],63],["Unreachable",[5,10],7]];
+  return "<article class='slide'><div class='kicker'>Topic 3 of 8</div><h1>"+TOPICS[2]+"</h1>"+
+   "<p class='lead'>Given coin values with unlimited supply of each, find the fewest coins that add up to exactly the target amount. If no combination works, answer −1.</p>"+
+   "<div class='grid2'><div class='card'><h2>Set the problem</h2>"+
+   "<div class='stack' style='gap:14px'>"+
+   "<label class='f'>Coin values (comma separated)<input type='text' id='coinsInput' value='"+S.coins.join(", ")+"' autocomplete='off' inputmode='numeric'></label>"+
+   "<label class='f'>Amount (1 to 60)<input type='number' id='amountInput' min='1' max='60' value='"+S.amount+"'></label>"+
+   "<p class='note bad' id='probErr' aria-live='polite' style='margin:0;min-height:1.4em'></p>"+
+   "<div><h3>Presets</h3><div class='row'>"+presets.map(function(p){return "<button class='btn' data-action='preset' data-coins='"+p[1].join(",")+"' data-amount='"+p[2]+"'>"+p[0]+"</button>";}).join("")+"</div></div>"+
+   "</div></div><div class='card'><h2>Answer</h2><div id='live'></div></div></div></article>";
+};
+LIVE[3]=function(){
+  var r=solve(S.coins,S.amount),A=S.amount,g=greedy(S.coins,A),path=rebuild(r.par,r.dp,A);
+  var h;
+  if(path)h="<p style='font-size:20px'>Fewest coins: <b class='mono'>"+r.dp[A]+"</b></p><div class='chips' style='margin-bottom:12px'>"+path.map(function(c){return "<span class='chipc'>"+c+"</span>";}).join("")+"</div><p class='mono note'>"+sumText(path)+" = "+A+"</p>";
+  else h="<p style='font-size:20px'>Answer: <b class='mono bad'>−1</b></p><p class='note'>No combination of "+coinsText()+" adds up to "+A+".</p>";
+  h+="<h3 style='margin-top:18px'>What greedy would do</h3>";
+  if(!g.ok)h+="<p>Largest-first gets stuck. It takes "+(g.coins.length?sumText(g.coins):"nothing")+" and cannot finish the amount.</p>";
+  else{
+    h+="<p>Largest-first takes <span class='mono'>"+sumText(g.coins)+"</span>, which is <b>"+g.coins.length+"</b> coin"+(g.coins.length===1?"":"s")+". ";
+    h+=(path&&g.coins.length>path.length)?"<span class='bad'><b>That is worse than the optimum.</b></span>":"Here it matches the optimum.";
+    h+="</p>";
+  }
+  el("live").innerHTML=h;
+};
+
+/* 4 state, recurrence */
+SLIDES[4]=function(){
+  return "<article class='slide'><div class='kicker'>Topic 4 of 8</div><h1>"+TOPICS[3]+"</h1>"+
+   "<p class='lead'>Three decisions define any DP solution: what a state means, how a state is built from smaller states, and where the chain stops.</p>"+
+   "<div class='grid2 even'><div class='stack'>"+
+   "<div class='card'><h3>State</h3><p class='formula'>dp[a] = fewest coins that make amount a</p><p class='note'>One state per amount from 0 to the target, so the target plus one states in all.</p></div>"+
+   "<div class='card'><h3>Recurrence</h3><p class='formula'>dp[a] = 1 + min( dp[a − c] )<br>over every coin c ≤ a</p><p class='note'>Choose the last coin, pay one coin, and look up the best answer for the rest.</p></div>"+
+   "<div class='card'><h3>Base cases</h3><p class='formula'>dp[0] = 0<br>dp[a] = ∞ if nothing reaches a</p><p class='note'>Zero coins make zero. Infinity marks amounts that cannot be built, and it stays infinite after adding 1. The answer is dp[target], or −1 when that is ∞.</p></div>"+
+   "</div><div class='card'><h2>Evaluate one state</h2>"+
+   "<label class='f'>Amount a = <b class='mono' id='evalAv'>"+S.evalA+"</b><input type='range' id='evalA' min='0' max='"+S.amount+"' value='"+S.evalA+"'></label>"+
+   "<div id='live' style='margin-top:14px'></div></div></div></article>";
+};
+LIVE[4]=function(){
+  var r=solve(S.coins,S.amount),a=S.evalA;
+  var src=S.coins.filter(function(c){return c<=a;}).map(function(c){return a-c;});
+  el("live").innerHTML="<h3>Candidates</h3>"+candHtml(a,r.dp,S.coins)+"<h3 style='margin-top:16px'>Table</h3>"+cellsHtml(r.dp,r.par,{cur:a,src:src});
+};
+
+/* 5 memoization */
+SLIDES[5]=function(){
+  var ev=memoTrace(S.coins,S.amount);
+  return "<article class='slide'><div class='kicker'>Topic 5 of 8</div><h1>"+TOPICS[4]+"</h1>"+
+   "<p class='lead'>Keep the recursion, add a cache. Before computing an amount, look it up. After computing it, store it. Step through the calls for amount "+S.amount+".</p>"+
+   "<div class='card' style='margin-bottom:20px'><div class='row'>"+
+   "<button class='btn' data-action='memo' data-d='reset'>⟲ Reset</button>"+
+   "<button class='btn' data-action='memo' data-d='-1'>← Step</button>"+
+   "<button class='btn primary' id='memoPlay' data-action='memoplay'>▶ Play</button>"+
+   "<button class='btn' data-action='memo' data-d='1'>Step →</button>"+
+   "<button class='btn' data-action='memo' data-d='end'>End ⇥</button></div>"+
+   "<label class='f' style='margin-top:12px'>Step <b class='mono' id='memoIv'>"+S.memoI+" / "+ev.length+"</b><input type='range' id='memoRange' min='0' max='"+ev.length+"' value='"+S.memoI+"'></label></div>"+
+   "<div class='grid2'><div class='stack'><pre class='code'>cache = {0: 0}\n\ndef min_coins(a):\n    if a in cache: return cache[a]\n    best = INF\n    for c in coins:\n        if c &lt;= a:\n            best = min(best, 1 + min_coins(a - c))\n    cache[a] = best\n    return best</pre>"+
+   "<div class='card'><h3>Call stack (top is newest)</h3><div id='stackLive'></div></div></div>"+
+   "<div class='stack'><div class='card'><h3>Cache</h3><div id='live'></div></div><div class='card'><h3>Recent steps</h3><div id='logLive'></div></div></div></div></article>";
+};
+LIVE[5]=function(){
+  var ev=memoTrace(S.coins,S.amount),i=S.memoI,rp=replay(ev,i),dpFull=solve(S.coins,S.amount).dp;
+  var dp=[],par=[];
+  for(var a=0;a<=S.amount;a++){var c=rp.cache[a];dp.push(c?c.v:INF);par.push(c?c.c:0);}
+  var h="<div class='cells'>";
+  for(a=0;a<=S.amount;a++){
+    var has=!!rp.cache[a],cls="cell"+(has?"":" pend")+((rp.cur&&rp.cur.a===a&&rp.cur.t==="hit")?" hit":"")+((rp.cur&&rp.cur.a===a&&rp.cur.t==="store")?" cur":"");
+    if(has&&dp[a]===INF)cls+=" inf";
+    h+="<div class='"+cls+"'><span class='ix'>"+a+"</span><span class='v'>"+(has?fmt(dp[a]):"·")+"</span><span class='cn'>"+(has&&a>0&&par[a]?"+"+par[a]:"")+"</span></div>";
+  }
+  h+="</div>";
+  var calls=0,hits=0;for(var k=0;k<i;k++){if(ev[k].t==="call")calls++;if(ev[k].t==="hit")hits++;}
+  h+="<div class='statline' style='margin-top:12px'><span>calls <b>"+calls+"</b></span><span>cache hits <b>"+hits+"</b></span><span>stored <b>"+(Object.keys(rp.cache).length-1)+"</b></span></div>";
+  el("live").innerHTML=h;
+  el("stackLive").innerHTML=rp.stack.length?"<div class='frames'>"+rp.stack.map(function(x){return "<div class='frame'>min_coins("+x+")</div>";}).join("")+"</div>":"<p class='note' style='margin:0'>"+(i===0?"Nothing has run yet. Press Step.":"The stack is empty. The recursion has finished with answer "+fmt(dpFull[S.amount])+".")+"</p>";
+  var from=Math.max(0,i-7),lg="<ul class='log'>";
+  if(i===0)lg+="<li>Press Step or Play to begin.</li>";
+  for(k=i-1;k>=from;k--){
+    var e=ev[k],txt;
+    if(e.t==="call")txt="call f("+e.a+"), not cached, so compute it";
+    else if(e.t==="hit")txt="f("+e.a+") for f("+e.from+") via coin "+e.c+": cache hit → "+fmt(e.v);
+    else txt="f("+e.a+") = "+fmt(e.v)+(e.c?" using coin "+e.c:"")+", stored";
+    lg+="<li class='"+(k===i-1?"now ":"")+(e.t==="hit"?"hit":"")+"'>"+(k+1)+". "+txt+"</li>";
+  }
+  el("logLive").innerHTML=lg+"</ul>";
+  var rng=el("memoRange");if(rng&&Number(rng.value)!==i)rng.value=i;
+  var iv=el("memoIv");if(iv)iv.textContent=i+" / "+ev.length;
+};
+
+/* 6 tabulation */
+SLIDES[6]=function(){
+  return "<article class='slide'><div class='kicker'>Topic 6 of 8</div><h1>"+TOPICS[5]+"</h1>"+
+   "<p class='lead'>Skip the recursion. Fill the table from amount 0 upward, so every smaller answer already exists when you need it.</p>"+
+   "<div class='card' style='margin-bottom:20px'><div class='row'>"+
+   "<button class='btn' data-action='tab' data-d='reset'>⟲ Reset</button>"+
+   "<button class='btn' data-action='tab' data-d='-1'>← Step</button>"+
+   "<button class='btn primary' id='tabPlay' data-action='tabplay'>▶ Play</button>"+
+   "<button class='btn' data-action='tab' data-d='1'>Step →</button>"+
+   "<button class='btn' data-action='tab' data-d='end'>End ⇥</button></div>"+
+   "<label class='f' style='margin-top:12px'>Filled through amount <b class='mono' id='tabKv'>"+S.tabK+"</b><input type='range' id='tabRange' min='0' max='"+S.amount+"' value='"+S.tabK+"'></label></div>"+
+   "<div class='grid2'><pre class='code'>dp = [INF] * (A + 1)\ndp[0] = 0\nfor a in range(1, A + 1):\n    for c in coins:\n        if c &lt;= a:\n            dp[a] = min(dp[a], dp[a - c] + 1)\nreturn dp[A] if dp[A] != INF else -1</pre>"+
+   "<div class='stack'><div class='card'><h3>Table</h3><div id='live'></div></div><div class='card'><h3 id='tabH'>Current cell</h3><div id='candLive'></div></div></div></div></article>";
+};
+LIVE[6]=function(){
+  var r=solve(S.coins,S.amount),k=S.tabK;
+  var src=k>0?S.coins.filter(function(c){return c<=k;}).map(function(c){return k-c;}):[];
+  el("live").innerHTML=cellsHtml(r.dp,r.par,{upto:k,cur:k,src:src,showCoin:true})+"<p class='note' style='margin:12px 0 0'>The small +n under a value is the coin that produced it.</p>";
+  el("tabH").textContent="Computing dp["+k+"]";
+  el("candLive").innerHTML=candHtml(k,r.dp,S.coins);
+  var rng=el("tabRange");if(rng&&Number(rng.value)!==k)rng.value=k;
+  var kv=el("tabKv");if(kv)kv.textContent=k;
+};
+
+/* 7 reconstruction */
+SLIDES[7]=function(){
+  var presets=[["Reachable",[1,3,4],6],["Unreachable",[5,10],7],["Partly reachable",[4,7],20]];
+  return "<article class='slide'><div class='kicker'>Topic 7 of 8</div><h1>"+TOPICS[6]+"</h1>"+
+   "<p class='lead'>The table gives a count, not the coins. Store the coin chosen at each amount, then walk back from the target. Amounts that nothing reaches stay at ∞.</p>"+
+   "<div class='grid2'><div class='stack'><pre class='code'>parent = [0] * (A + 1)   # coin used at each amount\n# in the DP loop, when dp[a] improves:\n#     parent[a] = c\n\npath, a = [], A\nwhile a &gt; 0:\n    c = parent[a]\n    path.append(c)\n    a -= c</pre>"+
+   "<div class='card'><h3>Try another case</h3><div class='row'>"+presets.map(function(p){return "<button class='btn' data-action='preset' data-coins='"+p[1].join(",")+"' data-amount='"+p[2]+"'>"+p[0]+" "+p[1].join(",")+" → "+p[2]+"</button>";}).join("")+"</div></div></div>"+
+   "<div class='card'><h3>Parent coins and values</h3><div id='live'></div></div></div></article>";
+};
+LIVE[7]=function(){
+  var r=solve(S.coins,S.amount),A=S.amount,path=rebuild(r.par,r.dp,A),h;
+  var visited=[],j=S.walkJ;
+  if(path){var a=A;visited.push(a);for(var i=0;i<j&&i<path.length;i++){a-=path[i];visited.push(a);}}
+  h=cellsHtml(r.dp,r.par,{showCoin:true,path:visited,cur:undefined});
+  var unreach=[];for(var x=1;x<=A;x++)if(r.dp[x]===INF)unreach.push(x);
+  if(path){
+    var taken=path.slice(0,j);
+    h+="<div class='row' style='margin-top:14px'><button class='btn' data-action='walk' data-d='-1' "+(j<=0?"disabled":"")+">← Back</button><button class='btn primary' data-action='walk' data-d='1' "+(j>=path.length?"disabled":"")+">Walk back one coin →</button><button class='btn' data-action='walk' data-d='reset'>⟲ Reset</button></div>";
+    h+="<p class='mono' style='margin:14px 0 8px'>at amount "+visited[visited.length-1]+(j<path.length?", parent["+visited[visited.length-1]+"] = "+path[j]:", reached 0")+"</p>";
+    h+="<div class='chips'>"+(taken.length?taken.map(function(c){return "<span class='chipc'>"+c+"</span>";}).join(""):"<span class='note'>No coins collected yet.</span>")+"</div>";
+    if(j>=path.length)h+="<p style='margin-top:12px'><b>Done.</b> "+sumText(path)+" = "+A+" using "+path.length+" coin"+(path.length===1?"":"s")+".</p>";
+  }else{
+    h+="<p style='margin-top:14px'><b class='bad'>dp["+A+"] = ∞, so the answer is −1.</b> No walk back is possible because no coin was ever recorded for this amount.</p>";
+  }
+  h+="<p class='note' style='margin:12px 0 0'>"+(unreach.length?"Unreachable amounts with "+coinsText()+": "+(unreach.length>16?unreach.slice(0,16).join(", ")+", …":unreach.join(", "))+".":"Every amount from 1 to "+A+" is reachable.")+"</p>";
+  el("live").innerHTML=h;
+};
+
+/* 8 complexity, greedy */
+SLIDES[8]=function(){
+  var A=S.amount,coins=S.coins,r=solve(coins,A),g=greedy(coins,A),ev=memoTrace(coins,A);
+  var memoCalls=ev.filter(function(e){return e.t!=="store";}).length;
+  var path=rebuild(r.par,r.dp,A);
+  var fail=null;
+  for(var a=1;a<=100;a++){
+    var rr=solve(coins,a),gg=greedy(coins,a);
+    if(rr.dp[a]!==INF&&(!gg.ok||gg.coins.length>rr.dp[a])){fail={a:a,g:gg,d:rebuild(rr.par,rr.dp,a)};break;}
+  }
+  var presets=[["Greedy fails",[1,3,4],6],["US coins",[1,5,10,25],63],["Classic",[1,2,5],11]];
+  return "<article class='slide'><div class='kicker'>Topic 8 of 8</div><h1 class='wide'>"+TOPICS[7]+"</h1>"+
+   "<p class='lead'>Same answers, very different costs. A is the target amount and n is the number of coin values.</p>"+
+   "<div class='card tw' style='margin-bottom:20px'><table class='cmp'><thead><tr><th>Approach</th><th>Time</th><th>Space</th><th>Notes</th></tr></thead><tbody>"+
+   "<tr><td>Naive recursion</td><td><code>O(n<sup>A</sup>)</code> worst case</td><td><code>O(A)</code> stack</td><td>Exponential. Repeats subproblems.</td></tr>"+
+   "<tr><td>Memoization</td><td><code>O(A·n)</code></td><td><code>O(A)</code> cache + <code>O(A)</code> stack</td><td>Computes only the amounts it needs. Deep recursion on large A.</td></tr>"+
+   "<tr><td>Tabulation</td><td><code>O(A·n)</code></td><td><code>O(A)</code></td><td>No recursion. Computes every amount up to A.</td></tr>"+
+   "<tr><td>Reconstruction</td><td>extra <code>O(answer)</code></td><td>extra <code>O(A)</code> for parents</td><td>Walks back from A to 0.</td></tr>"+
+   "<tr><td>Greedy</td><td><code>O(n log n)</code></td><td><code>O(1)</code> extra</td><td>Fast, but optimal only for some coin systems.</td></tr>"+
+   "</tbody></table></div>"+
+   "<div class='grid2 even'><div class='card'><h3>Measured on "+coinsText()+", amount "+A+"</h3>"+
+   "<div class='statline' style='flex-direction:column;gap:8px;font-size:15px'><span>Naive calls <b>"+big(naiveCalls(coins,A))+"</b></span><span>Memoized calls (hits included) <b>"+memoCalls+"</b></span><span>Tabulation coin checks <b>"+tabOps(coins,A)+"</b></span><span>Greedy coin picks <b>"+(g.ok?g.coins.length:"stuck")+"</b></span></div>"+
+   "<p class='note' style='margin:12px 0 0'>Memoization and tabulation both stay near A × n. The naive count is the one that explodes as A grows.</p></div>"+
+   "<div class='card'><h3>Greedy versus DP</h3>"+
+   "<p>At amount "+A+": greedy "+(g.ok?"uses <b>"+g.coins.length+"</b> coin"+(g.coins.length===1?"":"s")+" ("+sumText(g.coins)+")":"gets stuck")+"; DP "+(path?"uses <b>"+path.length+"</b> ("+sumText(path)+")":"finds no solution")+".</p>"+
+   "<p>"+(fail?"<span class='bad'><b>Greedy first loses at amount "+fail.a+".</b></span> It "+(fail.g.ok?"takes "+fail.g.coins.length+" coins ("+sumText(fail.g.coins)+") where "+fail.d.length+" suffice ("+sumText(fail.d)+")":"cannot finish, while DP uses "+sumText(fail.d))+".":"<span class='ok'><b>No failure found.</b></span> Greedy matches DP for every amount from 1 to 100 with these coins. That is evidence for this set, not a proof for all sets.")+"</p>"+
+   "<div class='row'>"+presets.map(function(p){return "<button class='btn' data-action='preset' data-coins='"+p[1].join(",")+"' data-amount='"+p[2]+"'>"+p[0]+"</button>";}).join("")+"</div></div></div></article>";
+};
+
+/* ---------- rendering & events ---------- */
+function stopTimer(){if(S.timer){clearInterval(S.timer);S.timer=null;}["memoPlay","tabPlay"].forEach(function(id){var b=el(id);if(b)b.textContent="▶ Play";});}
+function render(){
+  stopTimer();
+  el("slide").innerHTML=SLIDES[S.slide]();
+  if(LIVE[S.slide])LIVE[S.slide]();
+  if(S.slide===2&&LIVE[2])LIVE[2]();
+  updateNav();
+  try{history.replaceState(null,"","#s"+S.slide);}catch(e){}
+}
+function refresh(){if(LIVE[S.slide])LIVE[S.slide]();}
+function go(i){
+  i=Math.max(0,Math.min(SLIDES.length-1,i));
+  S.slide=i;S.seen[i]=1;
+  window.scrollTo(0,0);render();
+}
+function updateNav(){
+  var n=SLIDES.length;
+  el("prev").disabled=S.slide===0;
+  el("next").disabled=S.slide===n-1;
+  el("next").textContent=S.slide===0?"Start →":"Next →";
+  el("count").textContent=S.slide+" / "+(n-1);
+  el("prog").style.width=(S.slide/(n-1)*100)+"%";
+  var d="";for(var i=0;i<n;i++)d+="<button class='dot"+(i===S.slide?" on":(S.seen[i]?" seen":""))+"' data-action='goto' data-i='"+i+"' aria-label='"+(i===0?"Agenda":"Slide "+i+": "+TOPICS[i-1])+"' title='"+(i===0?"Agenda":TOPICS[i-1])+"'></button>";
+  el("dots").innerHTML=d;
+  updateChip();
+}
+function startTimer(kind){
+  stopTimer();
+  var btn=el(kind+"Play");if(btn)btn.textContent="⏸ Pause";
+  S.timer=setInterval(function(){
+    if(kind==="memo"){
+      var len=memoTrace(S.coins,S.amount).length;
+      if(S.memoI>=len){stopTimer();return;}
+      S.memoI++;refresh();
+    }else{
+      if(S.tabK>=S.amount){stopTimer();return;}
+      S.tabK++;refresh();
+    }
+  },kind==="memo"?650:900);
+}
+
+document.addEventListener("click",function(e){
+  var t=e.target.closest("[data-action],#prev,#next");
+  if(!t){return;}
+  if(t.id==="prev"){go(S.slide-1);return;}
+  if(t.id==="next"){go(S.slide+1);return;}
+  var act=t.getAttribute("data-action"),d=t.getAttribute("data-d");
+  if(act==="goto"){go(Number(t.getAttribute("data-i")));}
+  else if(act==="preset"){setProblem(t.getAttribute("data-coins").split(",").map(Number),Number(t.getAttribute("data-amount")));render();}
+  else if(act==="opt"){S.optC=Number(t.getAttribute("data-c"));refresh();}
+  else if(act==="memo"){
+    var len=memoTrace(S.coins,S.amount).length;stopTimer();
+    if(d==="reset")S.memoI=0;else if(d==="end")S.memoI=len;else S.memoI=Math.max(0,Math.min(len,S.memoI+Number(d)));
+    refresh();
+  }
+  else if(act==="memoplay"){if(S.timer){stopTimer();}else{if(S.memoI>=memoTrace(S.coins,S.amount).length)S.memoI=0;startTimer("memo");}}
+  else if(act==="tab"){
+    stopTimer();
+    if(d==="reset")S.tabK=0;else if(d==="end")S.tabK=S.amount;else S.tabK=Math.max(0,Math.min(S.amount,S.tabK+Number(d)));
+    refresh();
+  }
+  else if(act==="tabplay"){if(S.timer){stopTimer();}else{if(S.tabK>=S.amount)S.tabK=0;startTimer("tab");}}
+  else if(act==="walk"){
+    var p=rebuild(solve(S.coins,S.amount).par,solve(S.coins,S.amount).dp,S.amount),n=p?p.length:0;
+    if(d==="reset")S.walkJ=0;else S.walkJ=Math.max(0,Math.min(n,S.walkJ+Number(d)));
+    refresh();
+  }
+  else if(t.closest(".tn")){}
+});
+document.addEventListener("click",function(e){
+  var g=e.target.closest(".tn");
+  if(!g)return;
+  var a=Number(g.getAttribute("data-a"));
+  S.hl=(S.hl===a)?null:a;applyHl();
+});
+document.addEventListener("mouseover",function(e){
+  var g=e.target.closest&&e.target.closest(".tn");
+  if(g){S.hlHover=Number(g.getAttribute("data-a"));applyHl();}
+});
+document.addEventListener("mouseout",function(e){
+  var g=e.target.closest&&e.target.closest(".tn");
+  if(g){S.hlHover=null;applyHl();}
+});
+document.addEventListener("input",function(e){
+  var id=e.target.id;
+  if(id==="treeA"){S.treeA=Number(e.target.value);el("treeAv").textContent=S.treeA;S.hl=null;LIVE[1]();}
+  else if(id==="evalA"){S.evalA=Number(e.target.value);el("evalAv").textContent=S.evalA;refresh();}
+  else if(id==="memoRange"){stopTimer();S.memoI=Number(e.target.value);refresh();}
+  else if(id==="tabRange"){stopTimer();S.tabK=Number(e.target.value);refresh();}
+  else if(id==="coinsInput"||id==="amountInput"){
+    var pc=parseCoins(el("coinsInput").value),A=Number(el("amountInput").value),err=el("probErr");
+    if(pc.err){err.textContent=pc.err;return;}
+    if(!Number.isInteger(A)||A<1||A>60){err.textContent="Amount must be a whole number from 1 to 60.";return;}
+    err.textContent="";setProblem(pc.coins,A);refresh();
+  }
+});
+document.addEventListener("keydown",function(e){
+  var tag=(e.target.tagName||"").toLowerCase();
+  if(tag==="input"&&e.target.type!=="range")return;
+  if(tag==="input"&&e.target.type==="range"&&(e.key==="ArrowLeft"||e.key==="ArrowRight"))return;
+  if(e.key==="ArrowRight"||e.key==="PageDown"){go(S.slide+1);}
+  else if(e.key==="ArrowLeft"||e.key==="PageUp"){go(S.slide-1);}
+});
+
+/* boot */
+(function(){
+  var m=/^#s(\d)$/.exec(location.hash||"");
+  if(m&&Number(m[1])<SLIDES.length){S.slide=Number(m[1]);S.seen[S.slide]=1;}
+  resetUi();render();
+})();
+})();
+</script>
+</body>
+</html>
